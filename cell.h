@@ -5,6 +5,8 @@
 
 #define CELL_SIZE   64
 
+const double cd_cell_size = 64.0;
+const int ci_cell_size = 64;
 struct CellProt
 {
     bool            is_active;
@@ -43,12 +45,12 @@ public:
     Sprite*     sprite;
     CellProt*   cellprot;
     bool        is_active;
-
+    int         rand_sprite;
 private:
 
     Vector2i    position_map;
     Vector2f    position_real;
-    int         rand_sprite[2]; // количество рандомных спрайтов
+     // количество рандомных спрайтов
     double          fordable; //проходимость 1.0 = 100%
     int             dismorale;
     bool        visible;

@@ -9,6 +9,7 @@
 #include <math.h>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 
 using namespace std;
 using namespace sf;

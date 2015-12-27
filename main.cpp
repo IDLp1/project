@@ -30,22 +30,132 @@ void strclear(char *str)
 
 void DrawCells(RenderWindow* window)
 {
-    for(int i(0); i < MAX_CELLS; i++)
+    int level = 0;
+    while(level < 5)
     {
-        if(cell[i].is_active)
+        for(int i(0); i < MAX_CELLS; i++)
         {
-            cell[i].sprite->setPosition((double)cell[i].GetRealPosition().x, (double)cell[i].GetRealPosition().y);
-            window->draw(*cell[i].sprite);
+            if(cell[i].is_active)
+            {
+                if(cell[i].cellprot->level == level)
+                {
+                    //основа
+                    cell[i].sprite->setPosition((double)cell[i].GetRealPosition().x, (double)cell[i].GetRealPosition().y);
+                    cell[i].sprite->setTextureRect(IntRect(ci_cell_size * cell[i].rand_sprite, 0, ci_cell_size, ci_cell_size));
+                    window->draw(*cell[i].sprite);
+                    if(cell->cellprot->edge)
+                    {
+                        cell[i].sprite->setTextureRect(IntRect(cell[i].cellprot->rand_sprite * cd_cell_size, 0, cd_cell_size, cd_cell_size));
+                        //правое
+                        if(cell[i].GetMapPosition().x < gamemap->GetSizeW() - 1)
+                        {
+                            if(cell[i].cellprot->id != cell[i + 1].cellprot->id)
+                            {
+                                cell[i].sprite->setRotation(-90.0);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x + cd_cell_size, cell[i].GetRealPosition().y + cd_cell_size);
+                                window->draw(*cell[i].sprite);
+                                cell[i].sprite->setRotation(0.0);
+                            }
+                        }
+                        //левая
+                        if(cell[i].GetMapPosition().x > 0)
+                        {
+                            if(cell[i].cellprot->id != cell[i - 1].cellprot->id)
+                            {
+                                cell[i].sprite->setRotation(90.0);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x, cell[i].GetRealPosition().y);
+                                window->draw(*cell[i].sprite);
+                                cell[i].sprite->setRotation(0.0);
+                            }
+                        }
+                        //нижняя
+                        if(cell[i].GetMapPosition().y < gamemap->GetSizeH() - 1)
+                        {
+                            if(cell[i].cellprot->id != cell[i + gamemap->GetSizeW()].cellprot->id)
+                            {
+                                cell[i].sprite->setPosition((double)cell[i].GetRealPosition().x, (double)cell[i].GetRealPosition().y + cd_cell_size);
+                                window->draw(*cell[i].sprite);
+                            }
+                        }
+                        //верхняя
+                        if(cell[i].GetMapPosition().y > 0)
+                        {
+                            if(cell[i].cellprot->id != cell[i - gamemap->GetSizeW()].cellprot->id)
+                            {
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x + cd_cell_size, cell[i].GetRealPosition().y);
+                                cell[i].sprite->setRotation(180.0);
+                                window->draw(*cell[i].sprite);
+                                cell[i].sprite->setRotation(0.0);
+                            }
+                        }
+                        //уголки
+                        //правый верхний
+                        cell[i].sprite->setTextureRect(IntRect(cell[i].cellprot->rand_sprite * cd_cell_size + cd_cell_size, 0, cd_cell_size, cd_cell_size));
+                        if(cell[i].GetMapPosition().x < gamemap->GetSizeW() - 1 && cell[i].GetMapPosition().y > 0)
+                        {
+                            if(cell[i].cellprot->id != cell[i + 1].cellprot->id
+                                    && cell[i].cellprot->id != cell[i - gamemap->GetSizeW()].cellprot->id
+                                    && cell[i].cellprot->id != cell[i + 1 - gamemap->GetSizeW()].cellprot->id)
+                            {
+                                cell[i].sprite->setRotation(-90.0);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x + cd_cell_size, cell[i].GetRealPosition().y);
+                                window->draw(*cell[i].sprite);
+                                cell[i].sprite->setRotation(0.0);
+                            }
+                        }
+                        //правый нижний
+                        if(cell[i].GetMapPosition().x < gamemap->GetSizeW() - 1 && cell[i].GetMapPosition().y < gamemap->GetSizeH() - 1)
+                        {
+                            if(cell[i].cellprot->id != cell[i + 1].cellprot->id
+                                    && cell[i].cellprot->id != cell[i + gamemap->GetSizeW()].cellprot->id
+                                    && cell[i].cellprot->id != cell[i + 1 + gamemap->GetSizeW()].cellprot->id)
+                            {
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x + cd_cell_size, cell[i].GetRealPosition().y + cd_cell_size);
+                                window->draw(*cell[i].sprite);
+                                cell[i].sprite->setRotation(0.0);
+                            }
+                        }
+                        //левый нижний
+                        if(cell[i].GetMapPosition().x > 0 && cell[i].GetMapPosition().y < gamemap->GetSizeH() - 1)
+                        {
+                            if(cell[i].cellprot->id != cell[i - 1].cellprot->id
+                                    && cell[i].cellprot->id != cell[i + gamemap->GetSizeW()].cellprot->id
+                                    && cell[i].cellprot->id != cell[i - 1 + gamemap->GetSizeW()].cellprot->id)
+                            {
+                                cell[i].sprite->setRotation(90.0);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x, cell[i].GetRealPosition().y + cd_cell_size);
+                                window->draw(*cell[i].sprite);
+                                cell[i].sprite->setRotation(0.0);
+                            }
+                        }
+                        //левый верхний
+                        if(cell[i].GetMapPosition().x > 0 && cell[i].GetMapPosition().y > 0)
+                        {
+                            if(cell[i].cellprot->id != cell[i - 1].cellprot->id
+                                    && cell[i].cellprot->id != cell[i - gamemap->GetSizeW()].cellprot->id
+                                    && cell[i].cellprot->id != cell[i - 1 - gamemap->GetSizeW()].cellprot->id)
+                            {
+                                cell[i].sprite->setRotation(180.0);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x, cell[i].GetRealPosition().y);
+                                window->draw(*cell[i].sprite);
+                                cell[i].sprite->setRotation(0.0);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                break;
+            }
         }
-        else
-        {
-            break;
-        }
+        level++;
     }
 }
-
+//
 int main()
 {
+    srand(time(NULL));
     char cmd[32], arg[32];
     FILE* fs;
     fs = fopen("scripts/cells.s", "r");
@@ -102,6 +212,7 @@ int main()
                 {
                     cout << "Loading: texture " << dir << endl;
                     prot_cell[i].sprite.setTexture(texture[i]);
+                    prot_cell[i].sprite.setTextureRect(IntRect(0, 0, 64, 64));
                 }
             }
         }
@@ -118,6 +229,11 @@ int main()
         if(strcmp(cmd, "map") == 0)
         {
             ifstream mapfile(arg, ios_base::binary | ios_base::in);
+            if(!mapfile.is_open())
+            {
+                cout << "ERROR: Cannot open this map" << endl;
+                continue;
+            }
             mapfile.read((char*)gamemap, sizeof *gamemap);
             mapfile.close();
             break;
@@ -152,7 +268,7 @@ int main()
         {
             cell[i].SetPosition(x[CURRENT], y[CURRENT]);
             cell[i].is_active = true;
-            cout << "id = " << i << "X = " << cell[i].GetMapPosition().x << "Y = " << cell[i].GetMapPosition().y << endl;
+            //cout << "id = " << i << "X = " << cell[i].GetMapPosition().x << "Y = " << cell[i].GetMapPosition().y << endl;
             x[CURRENT] = 0;
             y[CURRENT]++;
         }

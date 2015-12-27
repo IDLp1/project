@@ -4,8 +4,8 @@ Cell::Cell()
 {
     sprite = NULL;
     cellprot = NULL;
-    rand_sprite[MAX] = 0;
-    rand_sprite[CURRENT] = rand_sprite[MAX];
+    rand_sprite = 0;
+
     fordable = 0.0;
     dismorale = 0;
     visible = false;
@@ -15,8 +15,8 @@ Cell::Cell()
 void Cell::SetOfCellProt(CellProt *_cellprot)
 {
     sprite = &_cellprot->sprite;
+    rand_sprite = random(0, _cellprot->rand_sprite - 1);
     cellprot = _cellprot;
-    rand_sprite[MAX] = _cellprot->rand_sprite;
     fordable = _cellprot->fordable;
     dismorale = _cellprot->dismorale;
 }
@@ -55,8 +55,8 @@ void Cell::SetPosition(int _x, int _y)
 {
     position_map.x = _x;
     position_map.y = _y;
-    position_real.x = (double)(_x * CELL_SIZE);
-    position_real.y = (double)(_y * CELL_SIZE);
+    position_real.x = (double)(_x * cd_cell_size);
+    position_real.y = (double)(_y * cd_cell_size);
 }
 
 Vector2i Cell::GetMapPosition()
