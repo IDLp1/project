@@ -2,6 +2,7 @@
 #define CELL_H
 
 #include "main.h"
+#include "camera.h"
 
 #define CELL_SIZE   64
 
@@ -36,7 +37,7 @@ public:
     void    SetVisible(bool);
 
     void        SetPosition(int x, int y);
-    Vector2f    GetRealPosition();
+    Vector2f    GetRealPosition(Camera* _camera);
     Vector2i    GetMapPosition();
     double      GetFordable();
     int         GetDismorale();
@@ -56,22 +57,5 @@ private:
     bool        visible;
 };
 
-class Map
-{
-public:
-    Map();
-    void GenerateRandom(int _min_id, int _max_id);
-    void SetSize(unsigned int _size_w, unsigned int _size_h);
-    void OutInConsole();
-    int GetMaxSize();
-    int GetSizeW();
-    int GetSizeH();
 
-    unsigned int    cell[MAX_CELLS];
-
-private:
-    unsigned int    size_w;
-    unsigned int    size_h;
-
-};
 #endif // CELL_H
