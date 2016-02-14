@@ -56,8 +56,8 @@ int Unit::GetStamina(int _max)
 
 void Unit::Move(int _x, int _y)
 {
-    position_map.x + _x;
-    position_map.y + _y;
+    position_map.x += _x;
+    position_map.y += _y;
 }
 
 int Unit::GetPointAction(int _max)
@@ -70,7 +70,7 @@ Vector2i Unit::GetPosition()
     return Vector2i(position_map.x, position_map.y);
 }
 
-Vector2f Unit::GetRealPosition(Camera* camera)
+Vector2f Unit::GetRealPosition() // при setOrigin в центре
 {
-    return Vector2f(position_map.x * cd_cell_size - camera->GetPosition().x, position_map.y * cd_cell_size - camera->GetPosition().y);
+    return Vector2f(position_map.x * cd_cell_size + cd_cell_size / 2.0, position_map.y * cd_cell_size + cd_cell_size / 2.0);
 }

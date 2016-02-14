@@ -59,7 +59,12 @@ void Decoration::SetPosition(Vector2i vector)
     position_real.y = vector.y * cd_cell_size;
 }
 
-Vector2f Decoration::GetRealPosition(Camera* camera)
+Vector2f Decoration::GetRealPosition()
 {
-    return Vector2f(position_real.x - camera->GetPosition().x, position_real.y - camera->GetPosition().y);
+    return Vector2f(position_real.x, position_real.y);
+}
+
+Vector2i Decoration::GetPosition()
+{
+    return Vector2i(position_map.x, position_map.y);
 }

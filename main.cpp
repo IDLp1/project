@@ -5,7 +5,7 @@
 #include "unit.h"
 #include "warrior.h"
 #include "fraction.h"
-#include "camera.h"
+
 
 Cell* cell = new Cell[MAX_CELLS];
 CellProt* prot_cell = new CellProt[MAX_CELLSPROT];
@@ -13,22 +13,30 @@ Decoration* decor = new Decoration[MAX_DECORATION];
 DecorationProt* prot_dec = new DecorationProt[MAX_DECPROT];
 Map* gamemap = new Map;
 
-Camera* camera = new Camera;
+
 
 Texture* texture_cell = new Texture[MAX_TEXTURES];
 Texture* tex_dev_unit = new Texture;
+Texture* tex_hud_order = new Texture;
 
 Sprite* sprite_cell = new Sprite[MAX_SPRITE_CELL];
 Sprite* sprite_dev_warrior = new Sprite; //dev
+Sprite* sprite_hud_order = new Sprite; //отрисовка пути войнов
 
 Color* color_red_fraction = new Color(c_color_red_fraction[0], c_color_red_fraction[1], c_color_red_fraction[2]);
 Color* color_blue_fraction = new Color(c_color_blue_fraction[0], c_color_blue_fraction[1], c_color_blue_fraction[2]);
 Color* color_green_fraction = new Color(c_color_green_fraction[0], c_color_green_fraction[1], c_color_green_fraction[2]);
 Color* color_yellow_fraction = new Color(c_color_yellow_fraction[0], c_color_yellow_fraction[1], c_color_yellow_fraction[2]);
 
+View* camera = new View;
+
 Warrior* warrior = new Warrior[MAX_WARRIOR];
 
 Fraction* fraction = new Fraction[MAX_FRACTION];
+
+CircleShape* shape_selected = new CircleShape(cf_size_warrior / 2.0 + 8.0);
+CircleShape* shape_move_order = new CircleShape(cf_size_warrior / 2.0 + 8.0);
+Vertex* line_order = new Vertex[2];
 
 int random(int min, int max)
 {
@@ -49,14 +57,89 @@ void strclear(char *str)
         str[i] = '\0';
     }
 }
+
+Vector2i GetPosition(const Vector2f _vector)
+{
+    float x = _vector.x;
+    float y = _vector.y;
+    x = x / cd_cell_size;
+    y = y / cd_cell_size;
+    return Vector2i((int)x, (int)y);
+}
+
 void DrawWarriors(RenderWindow* window)
 {
     for(int i(0); i < MAX_WARRIOR; i++)
     {
         if(warrior[i].is_alive)
         {
-            warrior[i].sprite.setPosition(Vector2f(warrior[i].GetRealPosition(camera)));
+            warrior[i].sprite.setPosition(Vector2f(warrior[i].GetRealPosition()));
             window->draw(warrior[i].sprite);
+            if(warrior[i].is_selected)
+            {
+                shape_selected->setPosition(Vector2f(warrior[i].GetRealPosition()));
+                window->draw(*shape_selected);
+                if(warrior[i].is_move_order)
+                {
+
+                    sprite_hud_order->setTextureRect(IntRect(0, 0, 64, 64));
+                    sprite_hud_order->setOrigin(Vector2f(cd_cell_size / 2.0, cd_cell_size / 2.0));
+                    sprite_hud_order->setColor(Color(0, 255, 0));
+                    sprite_hud_order->setPosition(GetRealPosition(warrior[i].GetMoveOrder(), true));
+                    window->draw(*sprite_hud_order);
+
+
+                    Vector2i pointer = warrior[i].GetPosition();
+                    sprite_hud_order->setTextureRect(IntRect(64, 0, 64, 64));
+                    for(int j(0 + warrior[i].current_step); j < MAX_STEPS; j++)//отрисовка пути
+                    {
+                        if(warrior[i].step[j+1].pos == Vector2i(0, 0))
+                        {
+                            break;
+                        }
+                        pointer += warrior[i].step[j].pos;
+                        sprite_hud_order->setPosition(GetRealPosition(pointer,true));
+                        if(warrior[i].step[j].pos.x == 1 && warrior[i].step[j].pos.y == 1)
+                        {
+                            sprite_hud_order->setRotation(45.0f);
+                        }
+                        else if(warrior[i].step[j].pos.x == 0 && warrior[i].step[j].pos.y == 1)
+                        {
+                            sprite_hud_order->setRotation(90.0f);
+                        }
+                        else if(warrior[i].step[j].pos.x == -1 && warrior[i].step[j].pos.y == 1)
+                        {
+                            sprite_hud_order->setRotation(135.0f);
+                        }
+                        else if(warrior[i].step[j].pos.x == -1 && warrior[i].step[j].pos.y == 0)
+                        {
+                            sprite_hud_order->setRotation(180.0f);
+                        }
+                        else if(warrior[i].step[j].pos.x == -1 && warrior[i].step[j].pos.y == -1)
+                        {
+                            sprite_hud_order->setRotation(225.0f);
+                        }
+                        else if(warrior[i].step[j].pos.x == 0 && warrior[i].step[j].pos.y == -1)
+                        {
+                            sprite_hud_order->setRotation(270.0f);
+                        }
+                        else if(warrior[i].step[j].pos.x == 1 && warrior[i].step[j].pos.y == -1)
+                        {
+                            sprite_hud_order->setRotation(315.0f);
+                        }
+                        else if(warrior[i].step[j].pos.x == 1 && warrior[i].step[j].pos.y == 0)
+                        {
+                            sprite_hud_order->setRotation(0.0f);
+                        }
+                        else
+                        {
+
+                        }
+                        window->draw(*sprite_hud_order);
+
+                    }
+                }
+            }
         }
     }
 }
@@ -73,10 +156,10 @@ void DrawCells(RenderWindow* window)
                 if(cell[i].cellprot->level == level)
                 {
                     //основа
-                    cell[i].sprite->setPosition((double)cell[i].GetRealPosition(camera).x, (double)cell[i].GetRealPosition(camera).y);
+                    cell[i].sprite->setPosition((double)cell[i].GetRealPosition().x, (double)cell[i].GetRealPosition().y);
                     cell[i].sprite->setTextureRect(IntRect(ci_cell_size * cell[i].rand_sprite, 0, ci_cell_size, ci_cell_size));
                     window->draw(*cell[i].sprite);
-                    if(cell->cellprot->edge)
+                    /*if(cell->cellprot->edge)
                     {
                         cell[i].sprite->setTextureRect(IntRect(cell[i].cellprot->rand_sprite * cd_cell_size, 0, cd_cell_size, cd_cell_size));
                         //правое
@@ -85,7 +168,7 @@ void DrawCells(RenderWindow* window)
                             if(cell[i].cellprot->id != cell[i + 1].cellprot->id)
                             {
                                 cell[i].sprite->setRotation(-90.0);
-                                cell[i].sprite->setPosition(cell[i].GetRealPosition(camera).x + cd_cell_size, cell[i].GetRealPosition(camera).y + cd_cell_size);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x + cd_cell_size, cell[i].GetRealPosition().y + cd_cell_size);
                                 window->draw(*cell[i].sprite);
                                 cell[i].sprite->setRotation(0.0);
                             }
@@ -96,7 +179,7 @@ void DrawCells(RenderWindow* window)
                             if(cell[i].cellprot->id != cell[i - 1].cellprot->id)
                             {
                                 cell[i].sprite->setRotation(90.0);
-                                cell[i].sprite->setPosition(cell[i].GetRealPosition(camera).x, cell[i].GetRealPosition(camera).y);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x, cell[i].GetRealPosition().y);
                                 window->draw(*cell[i].sprite);
                                 cell[i].sprite->setRotation(0.0);
                             }
@@ -106,7 +189,7 @@ void DrawCells(RenderWindow* window)
                         {
                             if(cell[i].cellprot->id != cell[i + gamemap->GetSizeW()].cellprot->id)
                             {
-                                cell[i].sprite->setPosition((double)cell[i].GetRealPosition(camera).x, (double)cell[i].GetRealPosition(camera).y + cd_cell_size);
+                                cell[i].sprite->setPosition((double)cell[i].GetRealPosition().x, (double)cell[i].GetRealPosition().y + cd_cell_size);
                                 window->draw(*cell[i].sprite);
                             }
                         }
@@ -115,7 +198,7 @@ void DrawCells(RenderWindow* window)
                         {
                             if(cell[i].cellprot->id != cell[i - gamemap->GetSizeW()].cellprot->id)
                             {
-                                cell[i].sprite->setPosition(cell[i].GetRealPosition(camera).x + cd_cell_size, cell[i].GetRealPosition(camera).y);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x + cd_cell_size, cell[i].GetRealPosition().y);
                                 cell[i].sprite->setRotation(180.0);
                                 window->draw(*cell[i].sprite);
                                 cell[i].sprite->setRotation(0.0);
@@ -131,7 +214,7 @@ void DrawCells(RenderWindow* window)
                                     && cell[i].cellprot->id != cell[i + 1 - gamemap->GetSizeW()].cellprot->id)
                             {
                                 cell[i].sprite->setRotation(-90.0);
-                                cell[i].sprite->setPosition(cell[i].GetRealPosition(camera).x + cd_cell_size, cell[i].GetRealPosition(camera).y);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x + cd_cell_size, cell[i].GetRealPosition().y);
                                 window->draw(*cell[i].sprite);
                                 cell[i].sprite->setRotation(0.0);
                             }
@@ -143,7 +226,7 @@ void DrawCells(RenderWindow* window)
                                     && cell[i].cellprot->id != cell[i + gamemap->GetSizeW()].cellprot->id
                                     && cell[i].cellprot->id != cell[i + 1 + gamemap->GetSizeW()].cellprot->id)
                             {
-                                cell[i].sprite->setPosition(cell[i].GetRealPosition(camera).x + cd_cell_size, cell[i].GetRealPosition(camera).y + cd_cell_size);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x + cd_cell_size, cell[i].GetRealPosition().y + cd_cell_size);
                                 window->draw(*cell[i].sprite);
                                 cell[i].sprite->setRotation(0.0);
                             }
@@ -156,7 +239,7 @@ void DrawCells(RenderWindow* window)
                                     && cell[i].cellprot->id != cell[i - 1 + gamemap->GetSizeW()].cellprot->id)
                             {
                                 cell[i].sprite->setRotation(90.0);
-                                cell[i].sprite->setPosition(cell[i].GetRealPosition(camera).x, cell[i].GetRealPosition(camera).y + cd_cell_size);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x, cell[i].GetRealPosition().y + cd_cell_size);
                                 window->draw(*cell[i].sprite);
                                 cell[i].sprite->setRotation(0.0);
                             }
@@ -169,12 +252,12 @@ void DrawCells(RenderWindow* window)
                                     && cell[i].cellprot->id != cell[i - 1 - gamemap->GetSizeW()].cellprot->id)
                             {
                                 cell[i].sprite->setRotation(180.0);
-                                cell[i].sprite->setPosition(cell[i].GetRealPosition(camera).x, cell[i].GetRealPosition(camera).y);
+                                cell[i].sprite->setPosition(cell[i].GetRealPosition().x, cell[i].GetRealPosition().y);
                                 window->draw(*cell[i].sprite);
                                 cell[i].sprite->setRotation(0.0);
                             }
                         }
-                    }
+                    }*/
                 }
             }
             else
@@ -193,13 +276,141 @@ void DrawDecorations(RenderWindow *window)
     {
         if(decor[i].is_active)
         {
-            decor[i].dec_prot->sprite.setPosition(decor[i].GetRealPosition(camera));
+            decor[i].dec_prot->sprite.setPosition(decor[i].GetRealPosition());
             window->draw(decor[i].dec_prot->sprite);
         }
         else
         {
             break;
         }
+    }
+}
+
+bool CheckFordable(Vector2i _vector)
+{
+    for(int i(0); i < MAX_WARRIOR; i++)
+    {
+        if(warrior[i].is_alive)
+        {
+            if(_vector == warrior[i].GetPosition()) return false;
+        }
+    }
+    for(int i(0); i < MAX_DECORATION; i++)
+    {
+        if(decor[i].is_active)
+        {
+            if(_vector == decor[i].GetPosition())
+            {
+                if(decor[i].dec_prot->fordable == 0.0) return false;
+            }
+        }
+    }
+    return true;
+}
+
+void WarriorBuildWay(Warrior* _warrior, Vector2i _vector)
+{
+    if(CheckFordable(_vector))
+    {
+        for(int i(0); i < MAX_STEPS; i++)
+        {
+            _warrior->step[i].fordable = true; //"очистка" шагов
+        }
+        _warrior->SetMoveOrder(_vector);
+        Vector2i pointer;
+        pointer.x = _warrior->GetPosition().x;
+        pointer.y = _warrior->GetPosition().y;
+        cout << "start p = " <<  pointer.x << ", " << pointer.y << endl;
+        bool wrongway = false;
+        for(int i(0); i < MAX_STEPS; i++)
+        {
+            //поиск ближнего пути
+            if(pointer.x - _warrior->GetMoveOrder().x < 0) _warrior->step[i].pos.x = 1;
+            else if(pointer.x - _warrior->GetMoveOrder().x == 0) _warrior->step[i].pos.x = 0;
+            else _warrior->step[i].pos.x = -1;
+            if(pointer.y - _warrior->GetMoveOrder().y < 0) _warrior->step[i].pos.y = 1;
+            else if(pointer.y - _warrior->GetMoveOrder().y == 0) _warrior->step[i].pos.y = 0;
+            else _warrior->step[i].pos.y = -1;
+
+            //препятсвия на ближнем пути
+            /*if(!wrongway)
+            {
+                wrongway = !CheckObstacles(pointer + _warrior->step[i].pos);
+            }
+            else _warrior->step[i].fordable = false;*/
+            int counter(0);
+            while(!CheckFordable(pointer + _warrior->step[i].pos) || counter > 10)
+            {
+                cout << "E6ok" << endl;
+                //Поиск пути
+                if(_warrior->step[i].pos.x == 1 && _warrior->step[i].pos.y == 1)
+                {
+                    _warrior->step[i].pos.x = 0;
+                    counter++;
+                    continue;
+                }
+                else if(_warrior->step[i].pos.x == 0 && _warrior->step[i].pos.y == 1)
+                {
+                    _warrior->step[i].pos.x = -1;
+                    counter++;
+                    continue;
+                }
+                else if(_warrior->step[i].pos.x == -1 && _warrior->step[i].pos.y == 1)
+                {
+                    _warrior->step[i].pos.y = 0;
+                    counter++;
+                    continue;
+                }
+                else if(_warrior->step[i].pos.x == -1 && _warrior->step[i].pos.y == 0)
+                {
+                    _warrior->step[i].pos.y = -1;
+                    counter++;
+                    continue;
+                }
+                else if(_warrior->step[i].pos.x == -1 && _warrior->step[i].pos.y == -1)
+                {
+                    _warrior->step[i].pos.x = 0;
+                    counter++;
+                    continue;
+                }
+                else if(_warrior->step[i].pos.x == 0 && _warrior->step[i].pos.y == -1)
+                {
+                    _warrior->step[i].pos.x = 1;
+                    counter++;
+                    continue;
+                }
+                else if(_warrior->step[i].pos.x == 1 && _warrior->step[i].pos.y == -1)
+                {
+                    _warrior->step[i].pos.y = 0;
+                    counter++;
+                    continue;
+                }
+                else if(_warrior->step[i].pos.x == 1 && _warrior->step[i].pos.y == 0)
+                {
+                    _warrior->step[i].pos.y = 1;
+                    counter++;
+                    continue;
+                }
+                else
+                {
+                    cout << "PIZDOS" << endl;
+                    break;
+                }
+                if(counter == 10)
+                {
+                    cout << "ZAVIS" << endl;
+                }
+            }
+            _warrior->step[i].fordable = false;
+            pointer += _warrior->step[i].pos;
+            cout << "step[" << i << "] = " <<  _warrior->step[i].pos.x << ", " << _warrior->step[i].pos.y << endl;
+            cout << "p = " <<  pointer.x << ", " << pointer.y << endl;
+            if(_warrior->step[i].pos.x == 0 && _warrior->step[i].pos.y == 0) break;
+        }
+    }
+    else
+    {
+        cout << "nope" << endl;
     }
 }
 
@@ -499,16 +710,18 @@ int main()
     }
 
     //игровые данные..........................................
-
     if(!tex_dev_unit->loadFromFile(c_tex_dev_unit))
     {
         cout << "Could not load texture: " << c_tex_dev_unit << endl;
         getchar();
         return 0;
     }
+
+    //переборка бойцев
     for(int i(0); i < MAX_WARRIOR; i++)
     {
         warrior[i].sprite.setTexture(*tex_dev_unit);
+        warrior[i].sprite.setOrigin(Vector2f(cf_size_warrior / 2.0, cf_size_warrior / 2.0));
     }
 
     fraction[0].SetColor(color_red_fraction);
@@ -519,14 +732,54 @@ int main()
     warrior[0].Spawn(3, 3, &fraction[2]);
     warrior[1].Spawn(4, 8, &fraction[3]);
     warrior[2].Spawn(6, 6, &fraction[0]);
+    warrior[5].Spawn(7, 7, &fraction[0]);
     warrior[3].Spawn(10, 11, &fraction[1]);
 
+    camera->setCenter(Vector2f(0.0, 0.0));
+    camera->setSize(Vector2f(960.0, 540.0));
 
+    //графические данные
+
+    if(!tex_hud_order->loadFromFile(c_dir_hud_order))
+    {
+        cout << "Could not load texture: " << c_dir_hud_order << endl;
+        getchar();
+        return 0;
+    }
+    sprite_hud_order->setTexture(*tex_hud_order);
+
+    shape_selected->setFillColor(Color(0, 0, 0, 0));
+    shape_selected->setOutlineColor(Color(0, 255, 0));
+    shape_selected->setOutlineThickness(4.0);
+    shape_selected->setOrigin(cf_size_warrior / 2.0 + 8.0, cf_size_warrior / 2.0 + 8.0);
+    shape_move_order->setFillColor(Color(0, 0, 0, 0));
+    shape_move_order->setOutlineColor(Color(0, 0, 255));
+    shape_move_order->setOutlineThickness(4.0);
+    shape_move_order->setOrigin(cf_size_warrior / 2.0 + 8.0, cf_size_warrior / 2.0 + 8.0);
+/*
+    line_order[0].color.r = 0;
+    line_order[0].color.g = 255;
+    line_order[0].color.b = 0;
+    line_order[1].color.r = 0;
+    line_order[1].color.g = 0;
+    line_order[1].color.b = 255;
+*/
+    bool move = false; //ход
+    bool end_move = false;//конец хода
 
     //.................................................................
     RenderWindow window(sf::VideoMode(DEFAULT_SCREEN_W, DEFAULT_SCREEN_H), name_game);
     window.setFramerateLimit(FPS_LIMIT);
     Event window_event;
+
+    bool mouse_lb_released[2] = {false, false};
+    bool mouse_rb_released[2] = {false, false};
+    bool space_released[2] = {false, false};
+    bool order_move = false;
+    Vector2i order_pointer(-1, -1);
+    unsigned int counter_order = 0;
+
+    Clock move_timer;
 
     //./////////////////////////////////////////////////ГЛАВНЫЙ ЦИКЛ//////////////////////////////////////////////
     while(window.isOpen())
@@ -537,23 +790,160 @@ int main()
 
         if(Keyboard::isKeyPressed(Keyboard::W))
         {
-            camera->Move(0.0, -cf_camera_speed);
+            camera->move(Vector2f(0.0, -cf_camera_speed));
         }
         if(Keyboard::isKeyPressed(Keyboard::S))
         {
-            camera->Move(0.0, cf_camera_speed);
+            camera->move(Vector2f(0.0, cf_camera_speed));
         }
         if(Keyboard::isKeyPressed(Keyboard::D))
         {
-            camera->Move(cf_camera_speed, 0.0);
+            camera->move(Vector2f(cf_camera_speed, 0.0));
         }
         if(Keyboard::isKeyPressed(Keyboard::A))
         {
-            camera->Move(-cf_camera_speed, 0.0);
+            camera->move(Vector2f(-cf_camera_speed, 0.0));
+        }
+        if(Keyboard::isKeyPressed(Keyboard::Space))
+        {
+            space_released[0] = true;
+            space_released[1] = true;
+        }
+        else
+        {
+            space_released[0] = false;
+        }
+        if(space_released[1] && !space_released[0])
+        {
+            space_released[1] = false;
+            if(!move) move = true;
+            move_timer.restart();
+        }
+        //Работа с мышью
+        Vector2i mouse_pos = Mouse::getPosition(window);
+        Vector2f mouse_world_pos = window.mapPixelToCoords(mouse_pos);
+        Vector2i mouse_gameworld_pos = GetPosition(mouse_world_pos);
+
+        if(Mouse::isButtonPressed(Mouse::Left))//Триггер нажатия левой кнопки мыши
+        {
+            mouse_lb_released[0] = true;
+            mouse_lb_released[1] = true;
+        }
+        else
+        {
+            mouse_lb_released[0] = false;
+        }
+        if(Mouse::isButtonPressed(Mouse::Right)) //Триггер нажатия правой кнопки мыши
+        {
+            mouse_rb_released[0] = true;
+            mouse_rb_released[1] = true;
+            if(!move && counter_order < MAX_STEPS - 1)
+            {
+                for(int i(0); i < MAX_WARRIOR; i++)
+                {
+                    if(warrior[i].is_alive)
+                    {
+                        if(warrior[i].is_selected)
+                        {
+                            if(mouse_gameworld_pos == warrior[i].GetPosition())
+                            {
+                                if(!order_move)
+                                {
+                                    order_move = true;
+                                    cout << "ordermove = true" << endl;
+                                }
+                                if(order_pointer == Vector2i(-1, -1));
+                                {
+                                    order_pointer = warrior[i].GetPosition();
+                                }
+                            }
+                            if(order_pointer != mouse_gameworld_pos && order_move)
+                            {
+                                warrior[i].step[counter_order].pos = mouse_gameworld_pos - order_pointer;
+                                cout << "S[" << counter_order << "](" << warrior[i].step[counter_order].pos.x << ", " << warrior[i].step[counter_order].pos.y << ")" << endl;
+                                order_pointer += warrior[i].step[counter_order].pos;
+                                counter_order++;
+                                warrior[i].SetMoveOrder(mouse_gameworld_pos);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            mouse_rb_released[0] = false;
+        }
+        if(mouse_lb_released[1] && !mouse_lb_released[0]) // Триггер отжатия левой кнопки мыши
+        {
+            mouse_lb_released[1] = false;
+            cout << "LB RELEASED" << endl;
+            for(int i(0); i < MAX_WARRIOR; i++) // выделение бойца
+            {
+                if(     mouse_world_pos.x > warrior[i].GetRealPosition().x - cf_size_warrior / 2.0 &&
+                        mouse_world_pos.x < warrior[i].GetRealPosition().x + cf_size_warrior / 2.0 &&
+                        mouse_world_pos.y > warrior[i].GetRealPosition().y - cf_size_warrior / 2.0 &&
+                        mouse_world_pos.y < warrior[i].GetRealPosition().y + cf_size_warrior / 2.0)
+                {
+                    if(!warrior[i].is_selected)
+                    {
+
+                        for(int j(0); j < MAX_WARRIOR; j++) warrior[j].is_selected = false;
+                        warrior[i].is_selected = true;
+                        cout << "WARRIOR " << i << " IS SELECTED" << endl;
+                        break;
+                    }
+                }
+            }
+        }
+        if(mouse_rb_released[1] && !mouse_rb_released[0]) // Триггер отжатия правой кнопки мыши
+        {
+            mouse_rb_released[1] = false;
+            cout << "RB RELEASED" << endl;
+            counter_order = 0;
+            order_pointer = Vector2i(-1, -1);
+            if(!move && !order_move)
+            {        
+                for(int i(0); i < MAX_WARRIOR; i++)
+                {
+                   if(warrior[i].is_alive)
+                   {
+                       if(warrior[i].is_selected)
+                       {
+                           if(mouse_gameworld_pos == warrior[i].GetMoveOrder())
+                           {
+                               warrior[i].ClearOrder();
+                           }
+                       }
+                   }
+                }
+            }
+            order_move = false;
+        }
+
+        if(move && move_timer.getElapsedTime().asMilliseconds() > ci_move_ms)
+        {
+            move_timer.restart();
+            cout << "MOVE!" << endl;
+            end_move = true;
+            for(int i(0); i < MAX_WARRIOR; i++)
+            {
+                if(warrior[i].is_move_order)
+                {
+                    warrior[i].MoveOrder();
+                    end_move = false;
+                }
+            }
+            if(end_move)
+            {
+                cout << "END MOVE" << endl;
+                move = false;
+            }
         }
 
         //КАДР////////////////////////////////////////////////
         window.clear(Color(100, 100, 100));
+        window.setView(*camera);
         DrawCells(&window);
         DrawDecorations(&window);
         DrawWarriors(&window);

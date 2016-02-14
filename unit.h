@@ -2,7 +2,7 @@
 #define UNIT_H
 
 #include "main.h"
-#include "camera.h"
+
 #include "cell.h"
 
 class Unit
@@ -28,7 +28,7 @@ public:
     int         GetStamina(int _max);
     int         GetPointAction(int _max);
     Vector2i    GetPosition();
-    Vector2f    GetRealPosition(Camera* camera);
+    Vector2f    GetRealPosition();
 
 private:
     int     health[2];

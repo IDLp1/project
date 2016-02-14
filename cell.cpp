@@ -69,9 +69,9 @@ Vector2i Cell::GetMapPosition()
     return position_map;
 }
 
-Vector2f Cell::GetRealPosition(Camera* _camera)
+Vector2f Cell::GetRealPosition()
 {
-    return Vector2f(position_real.x - _camera->GetPosition().x, position_real.y - _camera->GetPosition().y);
+    return Vector2f(position_real.x, position_real.y);
 }
 
 double Cell::GetFordable()
@@ -90,4 +90,8 @@ bool Cell::GetVisible()
 
 }
 
-
+Vector2f GetRealPosition(Vector2i _vector, bool center)
+{
+    if(!center) return Vector2f((float)_vector.x * cd_cell_size, (float)_vector.y * cd_cell_size);
+    else return Vector2f((float)_vector.x * cd_cell_size + cd_cell_size / 2.0, (float)_vector.y * cd_cell_size + cd_cell_size / 2.0);
+}

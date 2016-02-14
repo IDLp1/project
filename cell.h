@@ -2,7 +2,7 @@
 #define CELL_H
 
 #include "main.h"
-#include "camera.h"
+
 
 #define CELL_SIZE   64
 
@@ -37,7 +37,7 @@ public:
     void    SetVisible(bool);
 
     void        SetPosition(int x, int y);
-    Vector2f    GetRealPosition(Camera* _camera);
+    Vector2f    GetRealPosition();
     Vector2i    GetMapPosition();
     double      GetFordable();
     int         GetDismorale();
@@ -57,5 +57,6 @@ private:
     bool        visible;
 };
 
+Vector2f GetRealPosition(Vector2i _vector, bool center);
 
 #endif // CELL_H

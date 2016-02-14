@@ -10,7 +10,6 @@
 
 #include "main.h"
 #include "cell.h"
-#include "camera.h"
 
 class Mine
 {
@@ -52,7 +51,8 @@ public:
     void                SetPosition(Vector2i vector);
     void                SetProt(DecorationProt* _dec_prot);
 
-    Vector2f            GetRealPosition(Camera* camera);
+    Vector2f            GetRealPosition();
+    Vector2i            GetPosition();
 private:
     Vector2i    position_map;
     Vector2f    position_real;
