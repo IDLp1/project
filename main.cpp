@@ -82,7 +82,7 @@ void DrawWarriors(RenderWindow* window)
                 if(warrior[i].is_move_order)
                 {
 
-                    sprite_hud_order->setTextureRect(IntRect(0, 0, 64, 64));
+                    sprite_hud_order->setTextureRect(IntRect(0, 0, 64, 64));//отрисовка приказа
                     sprite_hud_order->setOrigin(Vector2f(cd_cell_size / 2.0, cd_cell_size / 2.0));
                     sprite_hud_order->setColor(Color(0, 255, 0));
                     sprite_hud_order->setPosition(GetRealPosition(warrior[i].GetMoveOrder(), true));
@@ -93,11 +93,12 @@ void DrawWarriors(RenderWindow* window)
                     sprite_hud_order->setTextureRect(IntRect(64, 0, 64, 64));
                     for(int j(0 + warrior[i].current_step); j < MAX_STEPS; j++)//отрисовка пути
                     {
-                        if(warrior[i].step[j+1].pos == Vector2i(0, 0))
+                        if(warrior[i].step[j].pos == Vector2i(0, 0))
                         {
                             break;
                         }
-                        pointer += warrior[i].step[j].pos;
+
+
                         sprite_hud_order->setPosition(GetRealPosition(pointer,true));
                         if(warrior[i].step[j].pos.x == 1 && warrior[i].step[j].pos.y == 1)
                         {
@@ -135,8 +136,8 @@ void DrawWarriors(RenderWindow* window)
                         {
 
                         }
+                        pointer += warrior[i].step[j].pos;
                         window->draw(*sprite_hud_order);
-
                     }
                 }
             }
@@ -288,6 +289,8 @@ void DrawDecorations(RenderWindow *window)
 
 bool CheckFordable(Vector2i _vector)
 {
+    if(_vector.x < 0) return false;
+    if(_vector.y < 0) return false;
     for(int i(0); i < MAX_WARRIOR; i++)
     {
         if(warrior[i].is_alive)
@@ -308,7 +311,7 @@ bool CheckFordable(Vector2i _vector)
     return true;
 }
 
-void WarriorBuildWay(Warrior* _warrior, Vector2i _vector)
+/*void WarriorBuildWay(Warrior* _warrior, Vector2i _vector) // постройка пути (не используется)
 {
     if(CheckFordable(_vector))
     {
@@ -337,7 +340,7 @@ void WarriorBuildWay(Warrior* _warrior, Vector2i _vector)
             {
                 wrongway = !CheckObstacles(pointer + _warrior->step[i].pos);
             }
-            else _warrior->step[i].fordable = false;*/
+            else _warrior->step[i].fordable = false;*//*
             int counter(0);
             while(!CheckFordable(pointer + _warrior->step[i].pos) || counter > 10)
             {
@@ -412,7 +415,7 @@ void WarriorBuildWay(Warrior* _warrior, Vector2i _vector)
     {
         cout << "nope" << endl;
     }
-}
+}*/
 
 int main()
 {
@@ -857,13 +860,42 @@ int main()
                                     order_pointer = warrior[i].GetPosition();
                                 }
                             }
+                            if(mouse_gameworld_pos == warrior[i].GetMoveOrder() && !order_move)
+                            {
+                                order_move = true;
+                                order_pointer = warrior[i].GetMoveOrder();
+                                for(int j(0); j < MAX_STEPS; j++)
+                                {
+                                    if(warrior[i].step[j].pos != Vector2i(0, 0)) counter_order++;
+                                    else break;
+                                }
+                            }
                             if(order_pointer != mouse_gameworld_pos && order_move)
                             {
-                                warrior[i].step[counter_order].pos = mouse_gameworld_pos - order_pointer;
-                                cout << "S[" << counter_order << "](" << warrior[i].step[counter_order].pos.x << ", " << warrior[i].step[counter_order].pos.y << ")" << endl;
-                                order_pointer += warrior[i].step[counter_order].pos;
-                                counter_order++;
-                                warrior[i].SetMoveOrder(mouse_gameworld_pos);
+                                if(CheckFordable(mouse_gameworld_pos))// проверка препятствия
+                                {
+                                    if(mouse_world_pos.x >= GetRealPosition(mouse_gameworld_pos, false).x + cf_offset_move_order // уменьшение граней ячеек для более простого перемещения по диагонали
+                                            && mouse_world_pos.x < GetRealPosition(mouse_gameworld_pos, false).x + cd_cell_size - cf_offset_move_order
+                                            && mouse_world_pos.y >= GetRealPosition(mouse_gameworld_pos, false).y + cf_offset_move_order
+                                            && mouse_world_pos.y < GetRealPosition(mouse_gameworld_pos, false).y + cd_cell_size - cf_offset_move_order)
+                                    {
+                                        Vector2i mo = mouse_gameworld_pos - order_pointer; //антибаг с "прыжками"
+                                        if(mo.x >= -1 && mo.x <= 1 && mo.y >= -1 && mo.y <= 1)
+                                        {
+                                            warrior[i].step[counter_order].pos = mouse_gameworld_pos - order_pointer;
+                                            cout << "S[" << counter_order << "](" << warrior[i].step[counter_order].pos.x << ", " << warrior[i].step[counter_order].pos.y << ")" << endl;
+                                            order_pointer += warrior[i].step[counter_order].pos;
+                                            counter_order++;
+                                            warrior[i].SetMoveOrder(mouse_gameworld_pos);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    order_move = false;
+                                    counter_order = 0;
+                                    order_pointer = Vector2i(-1, -1);
+                                }
                             }
                         }
                     }
@@ -910,7 +942,7 @@ int main()
                    {
                        if(warrior[i].is_selected)
                        {
-                           if(mouse_gameworld_pos == warrior[i].GetMoveOrder())
+                           if(mouse_gameworld_pos != warrior[i].GetMoveOrder())
                            {
                                warrior[i].ClearOrder();
                            }
@@ -921,7 +953,7 @@ int main()
             order_move = false;
         }
 
-        if(move && move_timer.getElapsedTime().asMilliseconds() > ci_move_ms)
+        if(move && move_timer.getElapsedTime().asMilliseconds() > ci_move_ms) // Ход
         {
             move_timer.restart();
             cout << "MOVE!" << endl;

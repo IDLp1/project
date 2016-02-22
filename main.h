@@ -39,9 +39,10 @@ using namespace sf;
 const float cf_camera_speed = 10.0;
 
 const char name_game[] = "PROJECT-E";
-const char c_tex_dev_unit[] = "sprites/dev_unit.png";
+const char c_tex_dev_unit[] = "sprites/dev_warrior.png";
 const char c_dir_hud_order[] = "sprites/hud_order.png";
 const int  ci_move_ms = 500;
+const float cf_offset_move_order = 8.0;
 
 int random(int min, int max);
 double random(double min, double max);

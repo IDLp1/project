@@ -7,7 +7,7 @@
 #include "unit.h"
 #include "fraction.h"
 
-const float cf_size_warrior = 48.0;
+const float cf_size_warrior = 64.0;
 
 struct Step
 {
