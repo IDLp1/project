@@ -6,6 +6,10 @@
 
 #define CELL_SIZE   64
 
+#define CELL_ID_STONE  0
+#define CELL_ID_DIRT   1
+#define CELL_ID_GREEN  3
+
 const double cd_cell_size = 64.0;
 const int ci_cell_size = 64;
 struct CellProt

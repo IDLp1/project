@@ -47,6 +47,50 @@ void Warrior::Spawn(int _x, int _y, Fraction* _fraction)
     }
 }
 
+void Warrior::Calc()
+{
+    SetMaxHealth(endurance * 50 + strenght * 25 + 100);
+    SetMaxStamina(endurance * 50 + 100);
+    damage = 1.0 + strenght * 0.1;
+    accuracy = agility * 50 + intellect * 25 + 100;
+    dodge = agility * 50 + 100;
+    crit_proc = sqrt((double)intellect / 2) * 5;
+    SetMaxPointAction(level*2 + 30);
+    SetPAPerMove(5 - agility / 5);
+    SetPAPerAttack(10 - agility / 3);
+}
+
+void Warrior::Spawn(int _x, int _y, Fraction *_fraction, int _strenght, int _agility, int _intellect, int _endurance, int _level)
+{
+    is_alive = true;
+    SetPosition(Vector2i(_x, _y));
+    fraction = _fraction;
+    if(fraction != NULL)
+    {
+        if(fraction->color != NULL)
+        {
+            sprite.setColor(*fraction->color);
+        }
+        else
+        {
+            cout << "Warning: fraction has no color";
+        }
+    }
+    else
+    {
+        cout << "Warning: warrior has no faction" << endl;
+    }
+    strenght = _strenght;
+    agility = _agility;
+    intellect = _intellect;
+    endurance = _endurance;
+    level = _level;
+    this->Calc();
+    SetHealth(GetHealth(MAX));
+    SetStamina(GetStamina(MAX));
+    SetPointAction(GetPointAction(MAX));
+}
+
 void Warrior::SetMoveOrder(Vector2i _vector)
 {
     move_order = _vector;
@@ -84,18 +128,26 @@ void Warrior::ClearOrder()
     }
 }
 
-void Warrior::MoveOrder()
+bool Warrior::MoveOrder()
 {
     if(is_move_order)
     {
         if(step[current_step].pos.x == 0 && step[current_step].pos.y == 0)
         {
             ClearOrder();
+            return false;
         }
         else
         {
-            this->Move(step[current_step].pos.x, step[current_step].pos.y);
-            current_step++;
+            if(this->Move(step[current_step].pos.x, step[current_step].pos.y))
+            {
+                current_step++;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }
@@ -104,3 +156,30 @@ Vector2i Warrior::GetMoveOrder()
 {
     return Vector2i(move_order.x, move_order.y);
 }
+
+float Warrior::GetDamage()
+{
+    return damage;
+}
+
+int Warrior::GetDodge()
+{
+    return dodge;
+}
+
+int Warrior::GetAccuracy()
+{
+    return accuracy;
+}
+
+float Warrior::GetCritProc()
+{
+    return crit_proc;
+}
+
+int Warrior::GetLevel()
+{
+    return level;
+}
+
+

@@ -13,7 +13,8 @@ Decoration* decor = new Decoration[MAX_DECORATION];
 DecorationProt* prot_dec = new DecorationProt[MAX_DECPROT];
 Map* gamemap = new Map;
 
-
+Font* font_main = new Font;
+Text* text_dev_param_warrior = new Text;
 
 Texture* texture_cell = new Texture[MAX_TEXTURES];
 Texture* tex_dev_unit = new Texture;
@@ -37,13 +38,18 @@ Fraction* fraction = new Fraction[MAX_FRACTION];
 CircleShape* shape_selected = new CircleShape(cf_size_warrior / 2.0 + 8.0);
 CircleShape* shape_move_order = new CircleShape(cf_size_warrior / 2.0 + 8.0);
 Vertex* line_order = new Vertex[2];
+RectangleShape* dark_shape = new RectangleShape;
 
+int random(unsigned int min, unsigned int max)
+{
+    max++;
+    return min + rand() % (max - min);
+}
 int random(int min, int max)
 {
     max++;
     return min + rand() % (max - min);
 }
-
 double random(double min, double max)
 {
     double f = (double)rand() / RAND_MAX;
@@ -67,7 +73,7 @@ Vector2i GetPosition(const Vector2f _vector)
     return Vector2i((int)x, (int)y);
 }
 
-void DrawWarriors(RenderWindow* window)
+void DrawWarriors(RenderWindow* window, bool draw_inv)
 {
     for(int i(0); i < MAX_WARRIOR; i++)
     {
@@ -79,6 +85,23 @@ void DrawWarriors(RenderWindow* window)
             {
                 shape_selected->setPosition(Vector2f(warrior[i].GetRealPosition()));
                 window->draw(*shape_selected);
+                if(draw_inv)
+                {
+                    //отрисовка инвентаря и параметров
+
+                    dark_shape->setPosition(warrior[i].GetRealPosition());
+                    window->draw(*dark_shape);
+                    char text[128];
+                    sprintf(text, "Health = %d|%d\nStamina = %d|%d\nPA = %d|%d\nDMG = %.2f\nACC = %d\nDDG = %d\nCRIT = %.2f%\n",
+                            warrior[i].GetHealth(CURRENT), warrior[i].GetHealth(MAX),
+                            warrior[i].GetStamina(CURRENT), warrior[i].GetStamina(MAX),
+                            warrior[i].GetPointAction(CURRENT), warrior[i].GetPointAction(MAX), warrior[i].GetDamage(),
+                            warrior[i].GetAccuracy(), warrior[i].GetDodge(), warrior[i].GetCritProc());
+                    text_dev_param_warrior->setString(text);
+                    text_dev_param_warrior->setPosition(warrior[i].GetRealPosition());
+                    window->draw(*text_dev_param_warrior);
+
+                }
                 if(warrior[i].is_move_order)
                 {
 
@@ -160,7 +183,7 @@ void DrawCells(RenderWindow* window)
                     cell[i].sprite->setPosition((double)cell[i].GetRealPosition().x, (double)cell[i].GetRealPosition().y);
                     cell[i].sprite->setTextureRect(IntRect(ci_cell_size * cell[i].rand_sprite, 0, ci_cell_size, ci_cell_size));
                     window->draw(*cell[i].sprite);
-                    /*if(cell->cellprot->edge)
+                    if(cell->cellprot->edge)
                     {
                         cell[i].sprite->setTextureRect(IntRect(cell[i].cellprot->rand_sprite * cd_cell_size, 0, cd_cell_size, cd_cell_size));
                         //правое
@@ -258,7 +281,7 @@ void DrawCells(RenderWindow* window)
                                 cell[i].sprite->setRotation(0.0);
                             }
                         }
-                    }*/
+                    }
                 }
             }
             else
@@ -472,7 +495,7 @@ int main()
         fs = fopen("scripts/decoration.s", "r");
         if(fs == NULL)
         {
-            cout << "Error: Could't open scripts/decoration.s" << endl;
+            cout << c_error << c_could_not_open << "scripts/decoration.s" << endl;
             getchar();
             return 0;
         }
@@ -563,7 +586,7 @@ int main()
                                 }
                                 if(!success)
                                 {
-                                    cout << "ERROR: Too many mines in decoration " << prot_dec[i].name << endl;
+                                    cout << c_error << "Too many mines in decoration " << prot_dec[i].name << endl;
                                     getchar();
                                     return 0;
                                 }
@@ -575,7 +598,7 @@ int main()
                         }
                         else
                         {
-                            cout << "ERROR: File decoration.s is corrupt" << endl;
+                            cout << c_error <<"File decoration.s is corrupt" << endl;
                             getchar();
                             return 0;
                         }
@@ -596,7 +619,7 @@ int main()
                      << "FR = " << prot_dec[i].fordable << endl;
             }
         }
-        //Загрузка текстур и звуков
+        //Загрузка текстур, шрифтов и звуков
         for(int i(0); i < MAX_CELLSPROT; i++)
         {
             if(prot_cell[i].is_active)
@@ -605,14 +628,28 @@ int main()
                 strclear(dir);
                 strcat(dir,"sprites/");
                 strcat(dir, prot_cell[i].sprite_name);
-                if(!texture_cell[i].loadFromFile(dir)) cout << "ERROR: Can't load texture: " << dir << endl;
+                if(!texture_cell[i].loadFromFile(dir)) cout << c_error << "Can't load texture: " << dir << endl;
                 else
                 {
-                    cout << "Loading: texture " << dir << endl;
+                    cout << c_loading <<  "texture " << dir << endl;
                     prot_cell[i].sprite.setTexture(texture_cell[i]);
                     prot_cell[i].sprite.setTextureRect(IntRect(0, 0, 64, 64));
                 }
             }
+        }
+        if(!font_main->loadFromFile(c_main_font))
+        {
+            cout << c_error << "Could't not open font file" << c_main_font << endl;
+            getchar();
+            return 0;
+        }
+        else
+        {
+            cout << c_loading << "font " << c_main_font << endl;
+            text_dev_param_warrior->setFont(*font_main);
+            text_dev_param_warrior->setCharacterSize(18);
+            text_dev_param_warrior->setColor(Color(255, 100, 0));
+
         }
     }
     //КОНСОЛЬ.....................................................
@@ -629,7 +666,7 @@ int main()
             ifstream mapfile(arg, ios_base::binary | ios_base::in);
             if(!mapfile.is_open())
             {
-                cout << "ERROR: Cannot open this map" << endl;
+                cout << c_error << "Cannot open this map" << endl;
                 continue;
             }
             mapfile.read((char*)gamemap, sizeof *gamemap);
@@ -639,10 +676,10 @@ int main()
         if(strcmp(cmd, "generate") == 0)
         {
             ofstream mapfile(arg, ios_base::binary | ios_base::out);
-            gamemap->SetSize(random(32, 64),(random(32, 64)));
-            gamemap->GenerateRandom(0,3);
+            gamemap->GenerateRandom(25,25, 25, 10);
             mapfile.write((char*)gamemap, sizeof *gamemap);
             mapfile.close();
+            cout << "Generate complete" << endl;
         }
         if(strcmp(cmd, "mapinfo") == 0)
         {
@@ -652,9 +689,6 @@ int main()
             cout << "MAP SIZE = " << gamemap->GetMaxSize() << " W = " << gamemap->GetSizeW() << " H = " << gamemap->GetSizeH() << endl;
         }
     }
-    gamemap->decoration[2] = 1;
-    gamemap->decoration[7] = 1;
-    gamemap->decoration[24] = 1;
     //....................................................................
     //генерация ячеек
     {
@@ -732,11 +766,11 @@ int main()
     fraction[2].SetColor(color_green_fraction);
     fraction[3].SetColor(color_yellow_fraction);
 
-    warrior[0].Spawn(3, 3, &fraction[2]);
-    warrior[1].Spawn(4, 8, &fraction[3]);
-    warrior[2].Spawn(6, 6, &fraction[0]);
-    warrior[5].Spawn(7, 7, &fraction[0]);
-    warrior[3].Spawn(10, 11, &fraction[1]);
+    warrior[0].Spawn(3, 3, &fraction[2], 5, 4, 4, 7, 1);
+    warrior[1].Spawn(4, 8, &fraction[3], 6, 3, 3, 4, 3);
+    warrior[2].Spawn(6, 6, &fraction[0], 3, 7, 6, 10, 3);
+    warrior[5].Spawn(7, 7, &fraction[0], 5, 5, 5, 4, 2);
+    warrior[3].Spawn(10, 11, &fraction[1], 6, 5, 7, 5, 5);
 
     camera->setCenter(Vector2f(0.0, 0.0));
     camera->setSize(Vector2f(960.0, 540.0));
@@ -745,7 +779,7 @@ int main()
 
     if(!tex_hud_order->loadFromFile(c_dir_hud_order))
     {
-        cout << "Could not load texture: " << c_dir_hud_order << endl;
+        cout << c_error << "Could not load texture: " << c_dir_hud_order << endl;
         getchar();
         return 0;
     }
@@ -759,6 +793,11 @@ int main()
     shape_move_order->setOutlineColor(Color(0, 0, 255));
     shape_move_order->setOutlineThickness(4.0);
     shape_move_order->setOrigin(cf_size_warrior / 2.0 + 8.0, cf_size_warrior / 2.0 + 8.0);
+
+    dark_shape->setSize(Vector2f(250.0f, 300.0f));
+    dark_shape->setFillColor(Color(0, 0, 0, 90));
+    dark_shape->setOutlineColor(Color(255, 100, 0));
+    dark_shape->setOutlineThickness(2.0f);
 /*
     line_order[0].color.r = 0;
     line_order[0].color.g = 255;
@@ -778,16 +817,22 @@ int main()
     bool mouse_lb_released[2] = {false, false};
     bool mouse_rb_released[2] = {false, false};
     bool space_released[2] = {false, false};
+    bool i_released[2] = {false, false};
     bool order_move = false;
     Vector2i order_pointer(-1, -1);
     unsigned int counter_order = 0;
 
     Clock move_timer;
 
+    bool is_inventory = false;
+
+
     //./////////////////////////////////////////////////ГЛАВНЫЙ ЦИКЛ//////////////////////////////////////////////
     while(window.isOpen())
     {
         while(window.pollEvent(window_event)) if(window_event.type == sf::Event::Closed) window.close();
+
+
 
         //Обработка клавиатуры и мыши
 
@@ -816,12 +861,29 @@ int main()
         {
             space_released[0] = false;
         }
-        if(space_released[1] && !space_released[0])
+        if(space_released[1] && !space_released[0]) //триггер нажатия пробела
         {
             space_released[1] = false;
             if(!move) move = true;
             move_timer.restart();
         }
+        if(Keyboard::isKeyPressed(Keyboard::I))
+        {
+            i_released[0] = true;
+            i_released[1] = true;
+        }
+        else
+        {
+            i_released[0] = false;
+        }
+        if(i_released[1] && !i_released[0]) //триггер нажатия i
+        {
+            i_released[1] = false;
+            if(!is_inventory) is_inventory = true;
+            else is_inventory = false;
+        }
+
+
         //Работа с мышью
         Vector2i mouse_pos = Mouse::getPosition(window);
         Vector2f mouse_world_pos = window.mapPixelToCoords(mouse_pos);
@@ -962,8 +1024,10 @@ int main()
             {
                 if(warrior[i].is_move_order)
                 {
-                    warrior[i].MoveOrder();
-                    end_move = false;
+                    if(warrior[i].MoveOrder())
+                    {
+                        end_move = false;
+                    }
                 }
             }
             if(end_move)
@@ -978,7 +1042,7 @@ int main()
         window.setView(*camera);
         DrawCells(&window);
         DrawDecorations(&window);
-        DrawWarriors(&window);
+        DrawWarriors(&window, is_inventory);
         window.display();
     }
 

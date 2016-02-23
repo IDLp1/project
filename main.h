@@ -41,15 +41,23 @@ const float cf_camera_speed = 10.0;
 const char name_game[] = "PROJECT-E";
 const char c_tex_dev_unit[] = "sprites/dev_warrior.png";
 const char c_dir_hud_order[] = "sprites/hud_order.png";
+const char c_main_font[] = "DejaVuSans.ttf";
+
+const char c_could_not_open[] = "Could not open ";
+const char c_error[] = "ERROR: ";
+const char c_loading[] = "Loading: ";
+
 const int  ci_move_ms = 500;
-const float cf_offset_move_order = 8.0;
+const float cf_offset_move_order = 10.0;
 
 int random(int min, int max);
+int random(unsigned int min, unsigned int max);
 double random(double min, double max);
 void strclear(char* str);
 bool CheckFordable(Vector2i _vector);
 Vector2i GetPosition(const Vector2f _vector);
 void DrawCells(RenderWindow* window);
 void DrawDecorations(RenderWindow* window);
+void DrawWarriors(RenderWindow* window, bool draw_inv);
 #endif // MAIN
 

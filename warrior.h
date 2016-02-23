@@ -21,13 +21,22 @@ class Warrior : public Unit
 public:
     Warrior();
     void Spawn(int _x, int _y, Fraction* _fraction); //простой спавн, далее нужна будет перегрузка под более серьезные спавны, возможно даже скриптами
+    void Spawn(int _x, int _y, Fraction *_fraction, int _strenght, int _agility, int _intellect, int _endurance, int _level);
+    void Calc();
     void SetMoveOrder(Vector2i _vector);
-    void MoveOrder();
+    bool MoveOrder();
     void ClearOrder();
     bool    is_move_order;
     Step    step[MAX_STEPS];
     int     current_step;
-    Vector2i GetMoveOrder();
+
+    Vector2i    GetMoveOrder();
+    float       GetDamage();
+    int         GetDodge();
+    int         GetAccuracy();
+    float       GetCritProc();
+    int         GetLevel();
+
 private:
 
     //игровые данные
@@ -46,6 +55,11 @@ private:
     int accuracy;
     int dodge;
     float   damage;
+    float   crit_proc; //процент крита
+
+    //расходы
+
+
     //состояние
 
     int hungry;
