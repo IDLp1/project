@@ -25,6 +25,7 @@ using namespace sf;
 #define _H           1
 
 #define MAX_TEXTURES        16
+#define MAX_TEX_WEAPONS     8
 
 #define MAX_CONST_CHAR      128
 #define MAX_CELLS           0x10000
@@ -34,14 +35,15 @@ using namespace sf;
 #define MAX_DECPROT         8
 
 #define MAX_FRACTION        4
-#define MAX_WARRIOR         64
+
+
 
 const float cf_camera_speed = 10.0;
 
 const char name_game[] = "PROJECT-E";
 const char c_tex_dev_unit[] = "sprites/dev_warrior.png";
 const char c_dir_hud_order[] = "sprites/hud_order.png";
-const char c_main_font[] = "DejaVuSans.ttf";
+const char c_main_font[] = "pala.ttf";
 
 const char c_could_not_open[] = "Could not open ";
 const char c_error[] = "ERROR: ";
@@ -58,6 +60,8 @@ bool CheckFordable(Vector2i _vector);
 Vector2i GetPosition(const Vector2f _vector);
 void DrawCells(RenderWindow* window);
 void DrawDecorations(RenderWindow* window);
-void DrawWarriors(RenderWindow* window, bool draw_inv);
+void DrawInventory(RenderWindow* window);
+void DrawWarriors(RenderWindow* window);
+
 #endif // MAIN
 

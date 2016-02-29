@@ -17,6 +17,7 @@ Warrior::Warrior()
     move_order.y = -1;
     is_move_order = false;
     current_step = 0;
+    weapon = NULL;
     for(int i(0); i < MAX_STEPS; i++)
     {
         step[i].pos.x = 0;
@@ -150,6 +151,21 @@ bool Warrior::MoveOrder()
             }
         }
     }
+}
+
+void Warrior::SetWeapon(Weapon *_weapon)
+{
+    if(_weapon->IsExist())
+    {
+        weapon = _weapon;
+        _weapon->SetPosition(GetPosition());
+    }
+}
+
+bool Warrior::Move(int _x, int _y)
+{
+    if(weapon != NULL) weapon->SetPosition(Vector2i(_x, _y));
+    Unit::Move(_x, _y);
 }
 
 Vector2i Warrior::GetMoveOrder()

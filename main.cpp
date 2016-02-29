@@ -3,7 +3,9 @@
 #include "map.h"
 #include "decoration.h"
 #include "unit.h"
+
 #include "warrior.h"
+#include "weapon.h"
 #include "fraction.h"
 
 
@@ -19,6 +21,7 @@ Text* text_dev_param_warrior = new Text;
 Texture* texture_cell = new Texture[MAX_TEXTURES];
 Texture* tex_dev_unit = new Texture;
 Texture* tex_hud_order = new Texture;
+Texture* tex_weapon = new Texture[MAX_TEX_WEAPONS];
 
 Sprite* sprite_cell = new Sprite[MAX_SPRITE_CELL];
 Sprite* sprite_dev_warrior = new Sprite; //dev
@@ -39,6 +42,10 @@ CircleShape* shape_selected = new CircleShape(cf_size_warrior / 2.0 + 8.0);
 CircleShape* shape_move_order = new CircleShape(cf_size_warrior / 2.0 + 8.0);
 Vertex* line_order = new Vertex[2];
 RectangleShape* dark_shape = new RectangleShape;
+
+WeaponProt* weapon_prot = new WeaponProt[MAX_WEAPONS_PROT]; //меч
+
+Weapon* weapon = new Weapon[MAX_WEAPONS];
 
 int random(unsigned int min, unsigned int max)
 {
@@ -73,7 +80,34 @@ Vector2i GetPosition(const Vector2f _vector)
     return Vector2i((int)x, (int)y);
 }
 
-void DrawWarriors(RenderWindow* window, bool draw_inv)
+void DrawInventory(RenderWindow* window)
+{
+        //отрисовка инвентаря и параметров
+    for(int i(0); i < MAX_WARRIOR; i++)
+    {
+        if(warrior[i].is_alive && warrior[i].is_selected)
+        {
+            dark_shape->setPosition(warrior[i].GetRealPosition());
+            window->draw(*dark_shape);
+            char text[128];
+            sprintf(text, "Health = %d|%d\nStamina = %d|%d\nPA = %d|%d\nDMG = %.2f\nACC = %d\nDDG = %d\nCRIT = %.2f%\n",
+                    warrior[i].GetHealth(CURRENT), warrior[i].GetHealth(MAX),
+                    warrior[i].GetStamina(CURRENT), warrior[i].GetStamina(MAX),
+                    warrior[i].GetPointAction(CURRENT), warrior[i].GetPointAction(MAX), warrior[i].GetDamage(),
+                    warrior[i].GetAccuracy(), warrior[i].GetDodge(), warrior[i].GetCritProc());
+            text_dev_param_warrior->setString(text);
+            text_dev_param_warrior->setPosition(warrior[i].GetRealPosition());
+            window->draw(*text_dev_param_warrior);
+            if(warrior[i].weapon != NULL)
+            {
+                warrior[i].weapon->weapon_prot->sprite.setPosition(warrior[i].GetRealPosition() + Vector2f(120.f, 120.f));
+                window->draw(warrior[i].weapon->weapon_prot->sprite);
+            }
+        }
+    }
+}
+
+void DrawWarriors(RenderWindow* window)
 {
     for(int i(0); i < MAX_WARRIOR; i++)
     {
@@ -85,23 +119,7 @@ void DrawWarriors(RenderWindow* window, bool draw_inv)
             {
                 shape_selected->setPosition(Vector2f(warrior[i].GetRealPosition()));
                 window->draw(*shape_selected);
-                if(draw_inv)
-                {
-                    //отрисовка инвентаря и параметров
 
-                    dark_shape->setPosition(warrior[i].GetRealPosition());
-                    window->draw(*dark_shape);
-                    char text[128];
-                    sprintf(text, "Health = %d|%d\nStamina = %d|%d\nPA = %d|%d\nDMG = %.2f\nACC = %d\nDDG = %d\nCRIT = %.2f%\n",
-                            warrior[i].GetHealth(CURRENT), warrior[i].GetHealth(MAX),
-                            warrior[i].GetStamina(CURRENT), warrior[i].GetStamina(MAX),
-                            warrior[i].GetPointAction(CURRENT), warrior[i].GetPointAction(MAX), warrior[i].GetDamage(),
-                            warrior[i].GetAccuracy(), warrior[i].GetDodge(), warrior[i].GetCritProc());
-                    text_dev_param_warrior->setString(text);
-                    text_dev_param_warrior->setPosition(warrior[i].GetRealPosition());
-                    window->draw(*text_dev_param_warrior);
-
-                }
                 if(warrior[i].is_move_order)
                 {
 
@@ -110,7 +128,6 @@ void DrawWarriors(RenderWindow* window, bool draw_inv)
                     sprite_hud_order->setColor(Color(0, 255, 0));
                     sprite_hud_order->setPosition(GetRealPosition(warrior[i].GetMoveOrder(), true));
                     window->draw(*sprite_hud_order);
-
 
                     Vector2i pointer = warrior[i].GetPosition();
                     sprite_hud_order->setTextureRect(IntRect(64, 0, 64, 64));
@@ -648,8 +665,19 @@ int main()
             cout << c_loading << "font " << c_main_font << endl;
             text_dev_param_warrior->setFont(*font_main);
             text_dev_param_warrior->setCharacterSize(18);
-            text_dev_param_warrior->setColor(Color(255, 100, 0));
+            text_dev_param_warrior->setColor(Color(190, 190, 190));
 
+        }
+
+        if(!tex_weapon[WPP_SWORD].loadFromFile("sprites/sword.png"))
+        {
+            cout << c_error << "Can't load texture: sprites/sword.png" << endl;
+            getchar();
+            return 0;
+        }
+        else
+        {
+            weapon_prot[WPP_SWORD].sprite.setTexture(tex_weapon[0]);
         }
     }
     //КОНСОЛЬ.....................................................
@@ -754,6 +782,10 @@ int main()
         return 0;
     }
 
+    //Оружие
+
+    weapon_prot[WPP_SWORD].Set("Sword", Damage(30, 60, 5, 10), 1000, false, 0.0f);
+
     //переборка бойцев
     for(int i(0); i < MAX_WARRIOR; i++)
     {
@@ -771,6 +803,9 @@ int main()
     warrior[2].Spawn(6, 6, &fraction[0], 3, 7, 6, 10, 3);
     warrior[5].Spawn(7, 7, &fraction[0], 5, 5, 5, 4, 2);
     warrior[3].Spawn(10, 11, &fraction[1], 6, 5, 7, 5, 5);
+
+    weapon[0].Spawn(Vector2i(0, 0), &weapon_prot[WPP_SWORD]);
+    warrior[0].SetWeapon(&weapon[0]);
 
     camera->setCenter(Vector2f(0.0, 0.0));
     camera->setSize(Vector2f(960.0, 540.0));
@@ -796,7 +831,7 @@ int main()
 
     dark_shape->setSize(Vector2f(250.0f, 300.0f));
     dark_shape->setFillColor(Color(0, 0, 0, 90));
-    dark_shape->setOutlineColor(Color(255, 100, 0));
+    dark_shape->setOutlineColor(Color(190, 190, 190));
     dark_shape->setOutlineThickness(2.0f);
 /*
     line_order[0].color.r = 0;
@@ -1042,7 +1077,8 @@ int main()
         window.setView(*camera);
         DrawCells(&window);
         DrawDecorations(&window);
-        DrawWarriors(&window, is_inventory);
+        DrawWarriors(&window);
+        if(is_inventory) DrawInventory(&window);
         window.display();
     }
 

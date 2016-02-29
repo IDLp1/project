@@ -2,10 +2,12 @@
 #define WARRIOR_H
 
 #define MAX_STEPS   64
+#define MAX_WARRIOR         64
 
 #include "main.h"
 #include "unit.h"
 #include "fraction.h"
+#include "weapon.h"
 
 const float cf_size_warrior = 64.0;
 
@@ -26,6 +28,8 @@ public:
     void SetMoveOrder(Vector2i _vector);
     bool MoveOrder();
     void ClearOrder();
+    void SetWeapon(Weapon* _weapon);
+    bool Move(int _x, int _y);
     bool    is_move_order;
     Step    step[MAX_STEPS];
     int     current_step;
@@ -36,13 +40,14 @@ public:
     int         GetAccuracy();
     float       GetCritProc();
     int         GetLevel();
-
+    Weapon* weapon;
 private:
 
     //игровые данные
 
     Fraction* fraction;
     Vector2i move_order;
+
 
     //физические статы
     int strenght;
